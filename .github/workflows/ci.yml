@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
-    name: lint · type · test (py${{ matrix.python-version }})
+  python:
+    name: python · lint · type · test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -19,26 +19,51 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
-
       - name: Install
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[db,observability,mcp,test]" ruff mypy
-
       - name: Ruff (lint)
         run: ruff check .
-
       - name: Ruff (format)
         run: ruff format --check .
-
       - name: Mypy (strict)
         run: mypy src
-
       - name: Pytest
         run: pytest
+
+  flutter:
+    name: flutter UI · analyze
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flutter_package
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+
+  web:
+    name: react admin · build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: react-admin/package-lock.json
+      - run: npm ci
+      - run: npm run build
