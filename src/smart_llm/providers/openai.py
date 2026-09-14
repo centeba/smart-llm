@@ -91,7 +91,9 @@ class OpenAIProvider:
                 "output_tokens": int(getattr(usage, "completion_tokens", 0) or 0),
             }
             self._capture_provider_cost(response)
-            return cast(dict[str, Any], json.loads(response.choices[0].message.content or ""))
+            return cast(
+                dict[str, Any], json.loads(response.choices[0].message.content or "")
+            )
         except Exception as e:
             logger.error(f"OpenAI error: {e!s}")
             raise e
@@ -413,7 +415,9 @@ class OpenAIProvider:
             if ev_usage is not None:
                 self.last_usage = {
                     "input_tokens": int(getattr(ev_usage, "prompt_tokens", 0) or 0),
-                    "output_tokens": int(getattr(ev_usage, "completion_tokens", 0) or 0),
+                    "output_tokens": int(
+                        getattr(ev_usage, "completion_tokens", 0) or 0
+                    ),
                 }
                 self._capture_provider_cost(chunk)
             choices = getattr(chunk, "choices", None) or []

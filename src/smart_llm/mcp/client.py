@@ -35,7 +35,9 @@ from ..security.prompt_injection import PromptInjectionFilterTool
 
 logger = logging.getLogger(__name__)
 
-_MCP_EXTRA_HINT = "MCP support requires the optional dependency: pip install 'smart-llm[mcp]'"
+_MCP_EXTRA_HINT = (
+    "MCP support requires the optional dependency: pip install 'smart-llm[mcp]'"
+)
 
 
 class MCPToolChangedError(RuntimeError):
@@ -122,7 +124,9 @@ def _jsonschema_to_model(name: str, schema: dict[str, Any] | None) -> type:
             fields[pname] = (pytype, ...)
         else:
             fields[pname] = (Optional[pytype], None)
-    return cast(type, create_model(name, __config__=ConfigDict(extra="allow"), **fields))
+    return cast(
+        type, create_model(name, __config__=ConfigDict(extra="allow"), **fields)
+    )
 
 
 def _sanitize_name(name: str) -> str:
@@ -161,14 +165,18 @@ class _MCPActionTool(ActionTool):
 
 def _build_mcp_action_tool(session: Any, spec: Any, prefix: str) -> ActionTool:
     tool_name = _sanitize_name(f"{prefix}{spec.name}")
-    args_model = _jsonschema_to_model(f"{tool_name}Args", getattr(spec, "inputSchema", None))
+    args_model = _jsonschema_to_model(
+        f"{tool_name}Args", getattr(spec, "inputSchema", None)
+    )
     original_name = spec.name
 
     async def run_action(
         self: Any, args: Any, *, db_session: Any = None, **_: Any
     ) -> dict[str, Any]:
         payload = (
-            args.model_dump(exclude_none=True) if hasattr(args, "model_dump") else dict(args)
+            args.model_dump(exclude_none=True)
+            if hasattr(args, "model_dump")
+            else dict(args)
         )
         result = await session.call_tool(original_name, payload)
         return _normalize_result(result)
@@ -178,7 +186,9 @@ def _build_mcp_action_tool(session: Any, spec: Any, prefix: str) -> ActionTool:
         (_MCPActionTool,),
         {
             "args_model": args_model,
-            "description": _sanitize_description(getattr(spec, "description", "") or ""),
+            "description": _sanitize_description(
+                getattr(spec, "description", "") or ""
+            ),
             "run_action": run_action,
             "_mcp_tool_name": original_name,
         },
@@ -206,7 +216,9 @@ class MCPToolProvider:
     ):
         _require_mcp()
         if sum(x is not None for x in (session, stdio, http_url)) != 1:
-            raise ValueError("MCPToolProvider requires exactly one of session=, stdio=, http_url=")
+            raise ValueError(
+                "MCPToolProvider requires exactly one of session=, stdio=, http_url="
+            )
         self._external_session = session
         self._stdio = stdio
         self._http_url = http_url
@@ -245,14 +257,23 @@ class MCPToolProvider:
             if self._stdio is not None:
                 from mcp.client.stdio import stdio_client
 
-                read, write = await self._stack.enter_async_context(stdio_client(self._stdio))
-            else:
-                from mcp.client.streamable_http import streamablehttp_client
-
-                read, write, _ = await self._stack.enter_async_context(
-                    streamablehttp_client(cast(str, self._http_url))
+                read, write = await self._stack.enter_async_context(
+                    stdio_client(self._stdio)
                 )
-            self._session = await self._stack.enter_async_context(ClientSession(read, write))
+            else:
+                from mcp.client import streamable_http as _sh
+
+                # mcp renamed streamablehttp_client -> streamable_http_client;
+                # accept either so any mcp>=1.0 works.
+                http_client = getattr(_sh, "streamable_http_client", None) or getattr(
+                    _sh, "streamablehttp_client"
+                )
+                read, write, _ = await self._stack.enter_async_context(
+                    http_client(cast(str, self._http_url))
+                )
+            self._session = await self._stack.enter_async_context(
+                ClientSession(read, write)
+            )
             await self._session.initialize()
 
         listing = await self._session.list_tools()
@@ -292,7 +313,9 @@ class MCPToolProvider:
         descriptions are sanitized against prompt injection at build time."""
         if self._session is None:
             raise RuntimeError("MCPToolProvider.connect() must be called first")
-        return [_build_mcp_action_tool(self._session, s, self._prefix) for s in self._specs]
+        return [
+            _build_mcp_action_tool(self._session, s, self._prefix) for s in self._specs
+        ]
 
     async def aclose(self) -> None:
         """Close the transport we opened. A caller-supplied session is left

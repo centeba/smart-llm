@@ -129,10 +129,14 @@ async def test_record_usage_persists_pii_masking_summary(db_session):
         pii_masking=summary,
     )
     row = (
-        await db_session.execute(
-            select(UsageEvent).where(UsageEvent.company_id == uuid.UUID(company))
+        (
+            await db_session.execute(
+                select(UsageEvent).where(UsageEvent.company_id == uuid.UUID(company))
+            )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     assert row is not None
     assert row.pii_masking == summary
 
@@ -157,10 +161,14 @@ async def test_record_usage_pii_masking_defaults_null(db_session):
         output_tokens=1,
     )
     row = (
-        await db_session.execute(
-            select(UsageEvent).where(UsageEvent.company_id == uuid.UUID(company))
+        (
+            await db_session.execute(
+                select(UsageEvent).where(UsageEvent.company_id == uuid.UUID(company))
+            )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     assert row is not None
     assert row.pii_masking is None
 
@@ -213,9 +221,7 @@ async def test_analyze_records_masking_summary_under_policy(db_session):
     from sqlalchemy import select
 
     company = str(uuid.uuid4())
-    prov_patch, _ = _patch_provider(
-        token_counts=(10, 5), data={"content": "noted"}
-    )
+    prov_patch, _ = _patch_provider(token_counts=(10, 5), data={"content": "noted"})
     with prov_patch:
         agent = Agent(
             name="pii-rec",
@@ -232,10 +238,14 @@ async def test_analyze_records_masking_summary_under_policy(db_session):
         await agent.analyze("my ssn is 123-45-6789 and card 4111 1111 1111 1111")
 
     row = (
-        await db_session.execute(
-            select(UsageEvent).where(UsageEvent.company_id == uuid.UUID(company))
+        (
+            await db_session.execute(
+                select(UsageEvent).where(UsageEvent.company_id == uuid.UUID(company))
+            )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     assert row is not None and row.pii_masking is not None
     assert row.pii_masking["policy"] == "enforce"
     assert row.pii_masking["per_type_counts"].get("SSN") == 1

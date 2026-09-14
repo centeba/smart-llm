@@ -10,7 +10,6 @@ The host wires the actual persistence callback at startup via
 no-op (so the agent still runs in environments without a tag store).
 """
 
-
 import logging
 from collections.abc import Callable
 from typing import Any

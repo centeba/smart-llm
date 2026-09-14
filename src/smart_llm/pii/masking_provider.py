@@ -111,7 +111,9 @@ class MaskingProvider:
         result = await self._inner.complete_with_image(
             masked_system, masked_prompt, image_bytes, mime_type
         )
-        return cast(list[dict[str, Any]], self._firewall.restore_obj(result, self._vault))
+        return cast(
+            list[dict[str, Any]], self._firewall.restore_obj(result, self._vault)
+        )
 
     async def stream(
         self,

@@ -9,7 +9,9 @@ def _cell(text: str) -> str:
     return text.replace("|", "/").replace("\n", " ")
 
 
-def to_markdown(results: Sequence[EvalResult], *, title: str = "Agent eval report") -> str:
+def to_markdown(
+    results: Sequence[EvalResult], *, title: str = "Agent eval report"
+) -> str:
     """A pass/fail table (one row per case, one column per check) + a summary."""
     total = len(results)
     passed = sum(1 for r in results if r.passed)

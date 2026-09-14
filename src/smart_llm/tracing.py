@@ -89,9 +89,7 @@ def _mark_error(span: Any, exc: BaseException) -> None:
         return
     try:
         span.record_exception(exc)
-        span.set_status(
-            _otel_trace.Status(_otel_trace.StatusCode.ERROR, str(exc))
-        )
+        span.set_status(_otel_trace.Status(_otel_trace.StatusCode.ERROR, str(exc)))
     except Exception:  # pragma: no cover - defensive
         pass
 

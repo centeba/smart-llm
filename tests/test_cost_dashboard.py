@@ -3,7 +3,6 @@
 import uuid
 from typing import Annotated, Any
 
-import pytest
 import pytest_asyncio
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient

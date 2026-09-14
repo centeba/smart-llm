@@ -246,7 +246,11 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
     def _storage_key(self, request: Request, idem_key: str) -> str:
         # Bind to credential + method + path so a key is scoped to one caller and
         # one endpoint (never a cross-tenant or cross-route replay).
-        cred = request.headers.get("authorization") or request.headers.get("x-api-key") or ""
+        cred = (
+            request.headers.get("authorization")
+            or request.headers.get("x-api-key")
+            or ""
+        )
         cred_fp = hashlib.sha256(cred.encode("utf-8")).hexdigest()[:16]
         raw = f"{request.method}:{request.url.path}:{cred_fp}:{idem_key}"
         digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
@@ -275,7 +279,9 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                 key, json.dumps({"state": "pending"}), nx=True, ex=self.ttl_seconds
             )
         except Exception:  # noqa: BLE001
-            logger.warning("idempotency: claim failed; running unguarded", exc_info=True)
+            logger.warning(
+                "idempotency: claim failed; running unguarded", exc_info=True
+            )
             return await call_next(request)
 
         if not claimed:
@@ -308,7 +314,9 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         replayed.headers["Idempotency-Replayed"] = "false"
         return replayed
 
-    async def _store(self, client: Any, key: str, response: Response, body: bytes) -> None:
+    async def _store(
+        self, client: Any, key: str, response: Response, body: bytes
+    ) -> None:
         safe_headers = [
             [k, v]
             for k, v in response.headers.items()
@@ -351,7 +359,9 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             # Original still in flight — tell the client to back off.
             return JSONResponse(
                 status_code=status.HTTP_409_CONFLICT,
-                content={"detail": "A request with this Idempotency-Key is in progress."},
+                content={
+                    "detail": "A request with this Idempotency-Key is in progress."
+                },
             )
 
         body = base64.b64decode(record["body_b64"])

@@ -16,6 +16,8 @@ dependencies = [
     "httpx>=0.28.1",
     # SQL parsing for smart_llm.sql_safety (validates/scopes db_query SQL).
     "sqlparse>=0.5",
+    # Structured logging used by logging_config / telemetry_context / service_runtime.
+    "structlog>=24.0.0",
 ]
 
 [project.optional-dependencies]
@@ -44,7 +46,9 @@ observability = [
 # MCP client — adapt external Model Context Protocol tool servers into native
 # ActionTools. Optional: only services that connect to MCP servers install it.
 mcp = [
-    "mcp>=1.0",
+    # v1 API (mcp.server.fastmcp, streamablehttp_client). The client accepts the
+    # v2 name too; migrating tests/server usage to mcp 2.x is a follow-up.
+    "mcp>=1.0,<2",
 ]
 test = [
     "pytest",
@@ -56,6 +60,16 @@ test = [
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E9", "F5", "F63", "F7", "F811", "F401", "I",
+    "UP015", "UP017", "UP028", "UP035", "UP041",
+    "RUF010", "RUF022", "E401", "W",
+]
 
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI DI markers are meant to be called in argument defaults (framework
@@ -85,11 +99,12 @@ module = [
     "botocore.*",
     "google.cloud",
     "google.cloud.*",
-    "sentinelbuild_sdk.*",
-    "integration_hub_backend.*",
     "pypdf",
     "docx",
     "pytesseract",
+    "PIL.*",
+    "redis",
+    "redis.*",
 ]
 ignore_missing_imports = true
 

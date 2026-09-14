@@ -15,8 +15,8 @@ dispatch (e.g. the non-streaming loop) ``emit_ui_event`` is a no-op.
 import contextvars
 from typing import Any
 
-_UI_EVENT_SINK: contextvars.ContextVar[list[dict[str, Any]] | None] = contextvars.ContextVar(
-    "smart_llm_ui_event_sink", default=None
+_UI_EVENT_SINK: contextvars.ContextVar[list[dict[str, Any]] | None] = (
+    contextvars.ContextVar("smart_llm_ui_event_sink", default=None)
 )
 
 

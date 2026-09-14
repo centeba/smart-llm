@@ -109,7 +109,9 @@ async def revoke_user_tokens(
     await redis.set(f"{_USER_PREFIX}{sub}", str(int(cutoff_ts)), ex=ttl_seconds)
 
 
-async def is_revoked(redis: Any, payload: dict[str, Any], *, strict: bool = False) -> bool:
+async def is_revoked(
+    redis: Any, payload: dict[str, Any], *, strict: bool = False
+) -> bool:
     """True if the decoded token ``payload`` has been revoked — by its ``jti``
     or by a user-level cutoff (its ``iat`` predates the user's revoke-all).
 

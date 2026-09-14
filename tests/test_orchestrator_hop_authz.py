@@ -66,7 +66,9 @@ async def test_authorizer_raise_fails_closed():
     async def boom(ctx: HopContext) -> bool:
         raise RuntimeError("authz down")
 
-    res = await run_agent_graph(_spec(), "hi", runner=_runner(calls), hop_authorizer=boom)
+    res = await run_agent_graph(
+        _spec(), "hi", runner=_runner(calls), hop_authorizer=boom
+    )
     # Only the entry ran; every downstream hop denied (fail-closed).
     assert calls == ["ag-root"]
     assert res["results"]["a"]["denied"] is True
@@ -79,7 +81,9 @@ async def test_hop_context_carries_identity():
     seen: list[tuple] = []
 
     async def record(ctx: HopContext) -> bool:
-        seen.append((ctx.from_node_id, ctx.from_agent_id, ctx.to_node_id, ctx.to_agent_id))
+        seen.append(
+            (ctx.from_node_id, ctx.from_agent_id, ctx.to_node_id, ctx.to_agent_id)
+        )
         return True
 
     await run_agent_graph(_spec(), "hi", runner=_runner(calls), hop_authorizer=record)

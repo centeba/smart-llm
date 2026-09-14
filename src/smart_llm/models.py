@@ -5,7 +5,6 @@ Requires the ``db`` extras: ``pip install smart-llm[db]``
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, Index, String, Text, TypeDecorator
 from sqlalchemy.engine import Dialect

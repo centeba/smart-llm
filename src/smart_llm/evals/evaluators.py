@@ -30,7 +30,9 @@ class Equals:
         expected = self._expected if self._expected is not None else case.expected
         actual = getattr(run, self._field, None)
         ok = actual == expected
-        return EvalCheck(self.name, ok, 1.0 if ok else 0.0, f"{actual!r} == {expected!r}")
+        return EvalCheck(
+            self.name, ok, 1.0 if ok else 0.0, f"{actual!r} == {expected!r}"
+        )
 
 
 class Contains:
@@ -48,7 +50,9 @@ class Contains:
             ok = self._needle in output
         else:
             ok = self._needle.lower() in output.lower()
-        return EvalCheck(self.name, ok, 1.0 if ok else 0.0, f"{self._needle!r} in output")
+        return EvalCheck(
+            self.name, ok, 1.0 if ok else 0.0, f"{self._needle!r} in output"
+        )
 
 
 class ToolCalled:
@@ -61,7 +65,9 @@ class ToolCalled:
 
     async def evaluate(self, case: EvalCase, run: AgentRun) -> EvalCheck:
         ok = self._tool in (run.tools_called or [])
-        return EvalCheck(self.name, ok, 1.0 if ok else 0.0, f"{self._tool} in {run.tools_called}")
+        return EvalCheck(
+            self.name, ok, 1.0 if ok else 0.0, f"{self._tool} in {run.tools_called}"
+        )
 
 
 class JsonSchemaValid:

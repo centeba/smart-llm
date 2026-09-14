@@ -88,7 +88,9 @@ async def test_gate_stamps_chained_audit_rows():
         audit_chain=chain,
     )
     gate = ToolPolicyGate(ctx)
-    await gate.evaluate(tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args())
+    await gate.evaluate(
+        tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args()
+    )
     await gate.evaluate(tool_name="Other", tool_cls=_ReadTool, validated_args=_Args())
 
     assert len(captured) == 2

@@ -48,7 +48,9 @@ async def test_adapted_tool_description_is_sanitized():
     async with create_connected_server_and_client_session(server) as session:
         provider = MCPToolProvider(session=session)
         await provider.connect()
-        tool = next(t for t in provider.get_action_tools() if type(t).__name__ == "weather")
+        tool = next(
+            t for t in provider.get_action_tools() if type(t).__name__ == "weather"
+        )
     # The model never sees the raw injection — it was sanitized at build time.
     assert _INJECT not in tool.description.lower()
     assert "[FILTERED]" in tool.description

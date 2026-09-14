@@ -121,7 +121,9 @@ async def test_agent_loop_emits_model_and_tool_spans():
                     stop_reason="tool_use",
                     usage={},
                 )
-            return AgentTurn(content="done", tool_calls=[], stop_reason="end_turn", usage={})
+            return AgentTurn(
+                content="done", tool_calls=[], stop_reason="end_turn", usage={}
+            )
 
         def _build_assistant_tool_use_turn(self, turn):
             return {"role": "assistant", "content": []}

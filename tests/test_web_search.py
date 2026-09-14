@@ -56,7 +56,9 @@ async def test_single_flight_collapses_concurrent_calls(monkeypatch):
     monkeypatch.setattr(web_search, "_tavily_search", fake)
     tool = _tool()
     tasks = [
-        asyncio.create_task(tool.run_action(WebSearchArgs(query="same"), db_session=None))
+        asyncio.create_task(
+            tool.run_action(WebSearchArgs(query="same"), db_session=None)
+        )
         for _ in range(6)
     ]
     await asyncio.sleep(0.02)  # let the leader claim the flight + enter the provider

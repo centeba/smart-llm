@@ -22,7 +22,6 @@ from __future__ import annotations
 from . import (
     calculate,  # noqa: F401  — calculate (safe arithmetic)
     email,  # noqa: F401  — extract_email_fields
-    integration_hub,  # noqa: F401  — Phase F action-tools + rule-builder
     legal,  # noqa: F401  — contract_clause_scan, red_flag_detection
     nlp,  # noqa: F401  — extract_entities, summarize, classify_intent
     parsing,  # noqa: F401  — parse_pdf, parse_docx, parse_image_ocr, ...

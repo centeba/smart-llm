@@ -141,9 +141,7 @@ class AnthropicProvider:
                 ),
             )
             text = (
-                cast(TextBlock, response.content[0]).text
-                if response.content
-                else "[]"
+                cast(TextBlock, response.content[0]).text if response.content else "[]"
             )
             usage = getattr(response, "usage", None)
             self.last_usage = {
@@ -340,9 +338,7 @@ class AnthropicProvider:
             async with self.client.messages.stream(
                 model=self.model_name,
                 max_tokens=self.max_tokens,
-                system=cast(
-                    Any, self._system_with_cache(system_prompt, cached_prefix)
-                ),
+                system=cast(Any, self._system_with_cache(system_prompt, cached_prefix)),
                 messages=cast(list[MessageParam], messages),
                 tools=cast(list[ToolParam], tool_specs),
             ) as stream:

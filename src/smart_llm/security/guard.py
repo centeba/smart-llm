@@ -166,7 +166,9 @@ class SafetyGuard:
         self._screen_injection(text, surface="tool_result")
         await self._moderate(text, surface="tool_result")
 
-    async def screen_image(self, image_bytes: bytes, mime_type: str = "image/jpeg") -> None:
+    async def screen_image(
+        self, image_bytes: bytes, mime_type: str = "image/jpeg"
+    ) -> None:
         """Screen an image on the way INTO a vision model.
 
         Posture from ``config.image_moderation``:
@@ -189,13 +191,17 @@ class SafetyGuard:
             return
         import base64
 
-        data_uri = f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+        data_uri = (
+            f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+        )
         try:
             result = await self._image_moderator.moderate_image(data_uri)
         except Exception as exc:  # noqa: BLE001 — backend outage
             logger.warning("image moderation backend failed: %s", exc)
-            if self.config.fail_open or self.config.shadow or (
-                self.config.image_moderation == "auto"
+            if (
+                self.config.fail_open
+                or self.config.shadow
+                or (self.config.image_moderation == "auto")
             ):
                 return  # auto/relaxed → allow on backend outage
             raise ModerationUnavailableError("image moderation unavailable") from exc

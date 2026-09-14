@@ -5,10 +5,10 @@ Detects common prompt injection patterns in user input and either
 blocks the request or sanitizes the offending segments.
 """
 
-from typing import Any
 import logging
 import re
 import unicodedata
+from typing import Any
 
 from ..base import Tool
 

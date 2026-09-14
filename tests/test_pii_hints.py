@@ -53,7 +53,11 @@ async def test_masking_provider_masks_hint_on_egress():
 
         async def complete(self, system, user_prompt):
             self.seen = user_prompt
-            text = user_prompt if isinstance(user_prompt, str) else json.dumps(user_prompt, ensure_ascii=False)
+            text = (
+                user_prompt
+                if isinstance(user_prompt, str)
+                else json.dumps(user_prompt, ensure_ascii=False)
+            )
             return {"content": text}
 
     inner = Fake()

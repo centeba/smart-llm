@@ -126,7 +126,9 @@ class PiiFirewall:
         if detector is None:
             detectors: list[Detector] = [RegexDetector(categories=categories)]
             detectors.extend(load_entry_point_detectors())
-            detector = detectors[0] if len(detectors) == 1 else CompositeDetector(detectors)
+            detector = (
+                detectors[0] if len(detectors) == 1 else CompositeDetector(detectors)
+            )
         self._detector = detector
 
     # ── Text + generic JSON ────────────────────────────────────────────────
@@ -187,7 +189,9 @@ class PiiFirewall:
         masked; image bytes and structural fields (ids, roles, media types) are
         left untouched.
         """
-        masked_system = self.mask_text(system, vault) if isinstance(system, str) else system
+        masked_system = (
+            self.mask_text(system, vault) if isinstance(system, str) else system
+        )
         masked_input = self._mask_provider_input(provider_input, vault)
         return masked_system, masked_input
 
@@ -205,7 +209,9 @@ class PiiFirewall:
         if "content" in out:
             out["content"] = self._mask_content(out["content"], vault)
         if isinstance(out.get("tool_calls"), list):  # OpenAI assistant tool calls
-            out["tool_calls"] = [self._mask_tool_call(tc, vault) for tc in out["tool_calls"]]
+            out["tool_calls"] = [
+                self._mask_tool_call(tc, vault) for tc in out["tool_calls"]
+            ]
         if isinstance(out.get("parts"), list):  # Gemini contents
             out["parts"] = [self._mask_gemini_part(p, vault) for p in out["parts"]]
         return out

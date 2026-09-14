@@ -78,13 +78,11 @@ def _install_otlp_log_export(level: int, service_name: str | None) -> None:
         logger.info("otlp_logging_skipped: %s", exc)
         return
 
-    resource = Resource.create(
-        {
-            "service.name": service_name
-            or os.getenv("OTEL_SERVICE_NAME", "smart-llm"),
-            "deployment.environment": os.getenv("ENVIRONMENT", "production"),
-        }
-    )
+    attributes: dict[str, str] = {
+        "service.name": service_name or os.getenv("OTEL_SERVICE_NAME") or "smart-llm",
+        "deployment.environment": os.getenv("ENVIRONMENT", "production"),
+    }
+    resource = Resource.create(attributes)
     provider = LoggerProvider(resource=resource)
     provider.add_log_record_processor(BatchLogRecordProcessor(OTLPLogExporter()))
     set_logger_provider(provider)

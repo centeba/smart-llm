@@ -213,8 +213,12 @@ def create_usage_router(
             await session.execute(
                 select(
                     func.coalesce(func.sum(AIUsageEvent.usd_cost), 0).label("cost"),
-                    func.coalesce(func.sum(AIUsageEvent.input_tokens), 0).label("in_tok"),
-                    func.coalesce(func.sum(AIUsageEvent.output_tokens), 0).label("out_tok"),
+                    func.coalesce(func.sum(AIUsageEvent.input_tokens), 0).label(
+                        "in_tok"
+                    ),
+                    func.coalesce(func.sum(AIUsageEvent.output_tokens), 0).label(
+                        "out_tok"
+                    ),
                     func.count().label("calls"),
                 ).where(*where)
             )
@@ -250,10 +254,16 @@ def create_usage_router(
         by_company: list[dict[str, Any]] = []
         if company_id:
             by_user = [
-                {"user_id": str(r.user_id) if r.user_id else None, "usd_cost": float(r.cost or 0)}
+                {
+                    "user_id": str(r.user_id) if r.user_id else None,
+                    "usd_cost": float(r.cost or 0),
+                }
                 for r in (
                     await session.execute(
-                        select(AIUsageEvent.user_id, func.sum(AIUsageEvent.usd_cost).label("cost"))
+                        select(
+                            AIUsageEvent.user_id,
+                            func.sum(AIUsageEvent.usd_cost).label("cost"),
+                        )
                         .where(*where)
                         .group_by(AIUsageEvent.user_id)
                         .order_by(func.sum(AIUsageEvent.usd_cost).desc())
@@ -262,10 +272,16 @@ def create_usage_router(
                 ).all()
             ]
             by_agent = [
-                {"agent_id": str(r.agent_id) if r.agent_id else None, "usd_cost": float(r.cost or 0)}
+                {
+                    "agent_id": str(r.agent_id) if r.agent_id else None,
+                    "usd_cost": float(r.cost or 0),
+                }
                 for r in (
                     await session.execute(
-                        select(AIUsageEvent.agent_id, func.sum(AIUsageEvent.usd_cost).label("cost"))
+                        select(
+                            AIUsageEvent.agent_id,
+                            func.sum(AIUsageEvent.usd_cost).label("cost"),
+                        )
                         .where(*where)
                         .group_by(AIUsageEvent.agent_id)
                         .order_by(func.sum(AIUsageEvent.usd_cost).desc())
@@ -274,7 +290,11 @@ def create_usage_router(
             ]
         else:
             by_company = [
-                {"company_id": str(r.company_id), "usd_cost": float(r.cost or 0), "calls": int(r.calls or 0)}
+                {
+                    "company_id": str(r.company_id),
+                    "usd_cost": float(r.cost or 0),
+                    "calls": int(r.calls or 0),
+                }
                 for r in (
                     await session.execute(
                         select(
@@ -298,11 +318,13 @@ def create_usage_router(
             )
         ).all():
             daily[created_at.date().isoformat()] += Decimal(str(cost or 0))
-        daily_cost = [
-            {"date": d, "usd_cost": float(daily[d])} for d in sorted(daily)
-        ]
+        daily_cost = [{"date": d, "usd_cost": float(daily[d])} for d in sorted(daily)]
 
-        budget = await company_settings_loader(session, str(company_id)) if company_id else 0.0
+        budget = (
+            await company_settings_loader(session, str(company_id))
+            if company_id
+            else 0.0
+        )
         return {
             "scope": "company" if company_id else "platform",
             "window_days": days,

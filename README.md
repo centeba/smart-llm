@@ -36,14 +36,39 @@ pip install "smart-llm[mcp]"               # + MCP client
 ## Quick start
 
 ```python
-from smart_llm.agent import Agent
+import asyncio
+from smart_llm import Agent, AgentManager, ContextPruningTool
 
-agent = Agent(model_name="claude-sonnet-4-5")           # provider inferred from the model
-reply = await agent.run("Summarize the attached ticket", tools=[...])
+
+async def main():
+    agent = Agent(
+        name="demo_agent",
+        provider_type="gemini",  # anthropic | openai | gemini | openrouter
+        system_prompt="You are a concise assistant.",
+        api_key="...",  # or rely on the provider env var
+        tools=[ContextPruningTool(max_chars=500)],
+    )
+    manager = AgentManager()  # optional failover across agents
+    manager.register_agent(agent)
+
+    response = await manager.analyze("Summarize agentic AI in 3 bullets.")
+    print(response.data)  # model output
+    print(response.metadata)  # usage / provider / cost
+
+
+asyncio.run(main())
 ```
 
 Set provider keys via env (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
-`GOOGLE_API_KEY`, `OPENROUTER_API_KEY`) — see [`.env.example`](.env.example).
+`GOOGLE_API_KEY`, `OPENROUTER_API_KEY`) — see [`.env.example`](.env.example) — and
+run the full example in [`examples/agent_demo.py`](examples/agent_demo.py).
+
+## Documentation
+
+- [Requirements](docs/REQUIREMENTS.md) — scope and acceptance criteria.
+- [Design](docs/DESIGN.md) — architecture, safety model, extensibility.
+- [User Guide](docs/USER_GUIDE.md) — install, configure, tools, observability, MCP.
+- [Agent loop](docs/agent-loop.md) — the loop internals.
 
 ## Observability
 
@@ -52,9 +77,9 @@ from fastapi import FastAPI
 from smart_llm.observability import install_observability
 from smart_llm.logging_config import configure_logging
 
-configure_logging(service_name="my-service")   # JSON logs + OTLP export + trace ids
+configure_logging(service_name="my-service")  # JSON logs + OTLP export + trace ids
 app = FastAPI()
-install_observability(app, service_name="my-service")   # /metrics + OTEL + Sentry
+install_observability(app, service_name="my-service")  # /metrics + OTEL + Sentry
 ```
 
 All exporters activate only when their env is set (`OTEL_EXPORTER_OTLP_ENDPOINT`,

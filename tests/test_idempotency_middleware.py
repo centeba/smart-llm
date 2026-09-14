@@ -2,7 +2,6 @@
 
 import json
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -118,8 +117,12 @@ def test_same_key_different_credential_is_isolated():
     app, state = _make_app(redis)
     client = TestClient(app, raise_server_exceptions=False)
 
-    client.post("/things", headers={"Idempotency-Key": "k1", "Authorization": "Bearer a"})
-    r = client.post("/things", headers={"Idempotency-Key": "k1", "Authorization": "Bearer b"})
+    client.post(
+        "/things", headers={"Idempotency-Key": "k1", "Authorization": "Bearer a"}
+    )
+    r = client.post(
+        "/things", headers={"Idempotency-Key": "k1", "Authorization": "Bearer b"}
+    )
     # Different credential → different storage key → not a replay.
     assert state["calls"] == 2
     assert r.headers["Idempotency-Replayed"] == "false"

@@ -73,9 +73,7 @@ def _iban_ok(iban: str) -> bool:
     if not re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{11,30}", s):
         return False
     rearranged = s[4:] + s[:4]
-    digits = "".join(
-        str(ord(c) - 55) if c.isalpha() else c for c in rearranged
-    )
+    digits = "".join(str(ord(c) - 55) if c.isalpha() else c for c in rearranged)
     try:
         return int(digits) % 97 == 1
     except ValueError:
@@ -159,7 +157,9 @@ class RegexDetector:
         rules: Sequence[_Rule] | None = None,
         categories: Iterable[str] | None = None,
     ):
-        self._rules: tuple[_Rule, ...] = tuple(rules) if rules is not None else _DEFAULT_RULES
+        self._rules: tuple[_Rule, ...] = (
+            tuple(rules) if rules is not None else _DEFAULT_RULES
+        )
         self._categories: set[str] | None = (
             {c.upper() for c in categories} if categories is not None else None
         )
@@ -252,5 +252,7 @@ def load_entry_point_detectors() -> list[Detector]:
             factory = ep.load()
             detectors.append(factory())
         except Exception as e:  # noqa: BLE001
-            logger.warning("pii: failed to load detector %r: %s", getattr(ep, "name", ep), e)
+            logger.warning(
+                "pii: failed to load detector %r: %s", getattr(ep, "name", ep), e
+            )
     return detectors

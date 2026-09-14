@@ -39,7 +39,9 @@ class TokenBucketRateLimiter:
         """Consume ``cost`` tokens for ``key``; return whether they were available."""
         now = time.monotonic()
         tokens, last = self._buckets.get(key, (self._limit.capacity, now))
-        tokens = min(self._limit.capacity, tokens + (now - last) * self._limit.refill_per_sec)
+        tokens = min(
+            self._limit.capacity, tokens + (now - last) * self._limit.refill_per_sec
+        )
         if tokens >= cost:
             self._buckets[key] = (tokens - cost, now)
             return True

@@ -33,15 +33,25 @@ def test_company_policy_used_when_set():
 
 def test_agent_may_tighten_but_not_loosen():
     # Company off, agent enforces → enforce.
-    assert policy.resolve_pii_policy("off", {"pii_masking_policy": "enforce"}) == "enforce"
+    assert (
+        policy.resolve_pii_policy("off", {"pii_masking_policy": "enforce"}) == "enforce"
+    )
     # Company strict, agent tries to relax → stays strict.
-    assert policy.resolve_pii_policy("strict", {"pii_masking_policy": "off"}) == "strict"
+    assert (
+        policy.resolve_pii_policy("strict", {"pii_masking_policy": "off"}) == "strict"
+    )
     # Equal → unchanged.
-    assert policy.resolve_pii_policy("enforce", {"pii_masking_policy": "enforce"}) == "enforce"
+    assert (
+        policy.resolve_pii_policy("enforce", {"pii_masking_policy": "enforce"})
+        == "enforce"
+    )
 
 
 def test_unknown_agent_override_ignored():
-    assert policy.resolve_pii_policy("enforce", {"pii_masking_policy": "nope"}) == "enforce"
+    assert (
+        policy.resolve_pii_policy("enforce", {"pii_masking_policy": "nope"})
+        == "enforce"
+    )
     assert policy.resolve_pii_policy("enforce", {}) == "enforce"
 
 

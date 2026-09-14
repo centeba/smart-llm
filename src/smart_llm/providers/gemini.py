@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 NAME = "gemini"
 
 
-def _messages_to_gemini_contents(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _messages_to_gemini_contents(
+    messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Convert agent_loop message dicts to the Gemini ``contents`` shape.
 
     Anthropic/OpenAI messages use ``role`` + ``content`` (string or blocks).

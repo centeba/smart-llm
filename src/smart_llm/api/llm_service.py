@@ -223,7 +223,9 @@ async def load_agent_skills(
 # ---------------------------------------------------------------------------
 
 
-def _resolve_pii(company_pii_policy: str | None, model_configuration: Any) -> tuple[str, bool]:
+def _resolve_pii(
+    company_pii_policy: str | None, model_configuration: Any
+) -> tuple[str, bool]:
     """Resolve the effective PII policy + vision escape hatch for one agent call.
 
     Combines the company policy (or the ``SMART_LLM_PII_DEFAULT_POLICY`` env

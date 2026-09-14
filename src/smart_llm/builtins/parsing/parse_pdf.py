@@ -5,10 +5,9 @@ error if the host hasn't installed it. Real OCR-fallback for
 image-only PDFs lives behind the Phase E5 strategy chain.
 """
 
-from typing import Any
-
 import io
 from pathlib import Path
+from typing import Any
 
 from smart_llm.base import Tool
 from smart_llm.db.models import MODALITY_DOCUMENT

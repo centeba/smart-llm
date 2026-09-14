@@ -73,4 +73,4 @@ def verify_chain(records: list[dict[str, Any]], *, head: str = GENESIS) -> bool:
     return True
 
 
-__all__ = ["AuditChain", "GENESIS", "canonical", "compute_hash", "verify_chain"]
+__all__ = ["GENESIS", "AuditChain", "canonical", "compute_hash", "verify_chain"]

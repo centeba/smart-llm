@@ -243,9 +243,7 @@ async def _anthropic_vision(
             ],
         ),
     )
-    return (
-        cast(TextBlock, resp.content[0]).text.strip() if resp.content else None
-    )
+    return cast(TextBlock, resp.content[0]).text.strip() if resp.content else None
 
 
 async def _openai_vision(
@@ -283,13 +281,16 @@ async def _gemini_vision(
     def _call() -> types.GenerateContentResponse:
         return client.models.generate_content(
             model=cfg.get("vision_model") or "gemini-2.5-flash",
-            contents=cast(Any, [
-                types.Part.from_bytes(
-                    data=__import__("base64").b64decode(image_b64),
-                    mime_type=_guess_media_type(image_b64),
-                ),
-                prompt,
-            ]),
+            contents=cast(
+                Any,
+                [
+                    types.Part.from_bytes(
+                        data=__import__("base64").b64decode(image_b64),
+                        mime_type=_guess_media_type(image_b64),
+                    ),
+                    prompt,
+                ],
+            ),
         )
 
     loop = asyncio.get_running_loop()

@@ -122,7 +122,9 @@ class AgentTurn:
     content: str | None  # Final text (None during tool-use rounds).
     tool_calls: list[ToolCall]  # Empty when stop_reason == "end_turn".
     stop_reason: str  # ``"end_turn"`` | ``"tool_use"`` | ``"stop"``.
-    usage: dict[str, Any] = field(default_factory=dict)  # ``input_tokens`` / ``output_tokens``.
+    usage: dict[str, Any] = field(
+        default_factory=dict
+    )  # ``input_tokens`` / ``output_tokens``.
 
 
 # ── Streaming events (Tech-debt #5 / F2 streaming follow-up) ─────────────────
@@ -546,9 +548,7 @@ async def _dispatch_all(
             # ungated. read-only tools still run. Set SMART_LLM_ALLOW_UNGATED_TOOLS=
             # true to restore the legacy ungated behaviour for callers that
             # knowingly opt out.
-            reason = (
-                "no policy gate configured; write/external tools denied by default"
-            )
+            reason = "no policy gate configured; write/external tools denied by default"
             results.append(
                 {
                     "tool_call_id": call.id,
@@ -705,7 +705,9 @@ async def run_agent_loop_stream(
         # Per-turn accumulators — built up from stream events so we
         # can reconstruct the AgentTurn after the iterator completes.
         text_chunks: list[str] = []
-        tool_partial: dict[str, dict[str, Any]] = {}  # id -> {"name": str, "json_buf": str}
+        tool_partial: dict[
+            str, dict[str, Any]
+        ] = {}  # id -> {"name": str, "json_buf": str}
         turn_stop_reason: str = "end_turn"
         turn_usage: dict[str, Any] = {}
 

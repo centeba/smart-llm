@@ -39,7 +39,11 @@ async def test_analyze_masks_egress_and_rehydrates(monkeypatch):
     async def fake_complete(system, user_prompt):
         captured["system"] = system
         captured["input"] = user_prompt
-        text = user_prompt if isinstance(user_prompt, str) else json.dumps(user_prompt, ensure_ascii=False)
+        text = (
+            user_prompt
+            if isinstance(user_prompt, str)
+            else json.dumps(user_prompt, ensure_ascii=False)
+        )
         return {"content": text}
 
     # Replace the inner SDK call — the MaskingProvider wraps this.

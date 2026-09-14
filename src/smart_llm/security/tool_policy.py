@@ -181,7 +181,9 @@ class ToolPolicyGate:
                     self.ctx.agent_id, self.ctx.acting_company_id, tool_name
                 )
             except Exception:  # noqa: BLE001 — limiter must never break a run
-                log.warning("tool_policy: rate_limiter failed (allowing)", exc_info=True)
+                log.warning(
+                    "tool_policy: rate_limiter failed (allowing)", exc_info=True
+                )
                 within = True
             if not within:
                 base = DECISION_DENY

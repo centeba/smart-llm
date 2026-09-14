@@ -63,7 +63,9 @@ async def test_failing_check_marks_result_failed():
 async def test_agent_runner_with_contains():
     agent = _FakeAgent({"content": "The capital of France is Paris."})
     runner = agent_runner(lambda case: agent)
-    results = await run_evals([EvalCase(input="capital?", id="c1")], runner, [Contains("Paris")])
+    results = await run_evals(
+        [EvalCase(input="capital?", id="c1")], runner, [Contains("Paris")]
+    )
     assert results[0].passed
     assert results[0].run.usage == {"input_tokens": 1, "output_tokens": 1}
 

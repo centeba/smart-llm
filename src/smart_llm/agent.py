@@ -538,7 +538,9 @@ class Agent(AbstractAgent):
         )
         try:
             _streamed: list[str] = []
-            async for chunk in self._provider.stream(self.system_prompt, provider_input):
+            async for chunk in self._provider.stream(
+                self.system_prompt, provider_input
+            ):
                 _streamed.append(chunk)
                 yield chunk
             # Post-hoc output screen — cannot unsend, so a flag is logged, not raised.
@@ -730,7 +732,9 @@ class Agent(AbstractAgent):
                     **_loop_kwargs,
                 )
                 # ``last_usage`` is accumulated across loop turns by the loop.
-                self._trace_usage(span, getattr(self._provider, "last_usage", None) or {})
+                self._trace_usage(
+                    span, getattr(self._provider, "last_usage", None) or {}
+                )
             except Exception as loop_exc:
                 span.error(loop_exc)
                 raise

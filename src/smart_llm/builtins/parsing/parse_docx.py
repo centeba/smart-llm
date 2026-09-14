@@ -1,8 +1,7 @@
 """``parse_docx`` skill — extract text from a .docx file."""
 
-from typing import Any
-
 from pathlib import Path
+from typing import Any
 
 from smart_llm.base import Tool
 from smart_llm.db.models import MODALITY_DOCUMENT

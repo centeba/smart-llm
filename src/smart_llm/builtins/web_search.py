@@ -47,7 +47,9 @@ def _get_redis() -> Any:
     if _redis_resolved:
         return _redis_client
     _redis_resolved = True
-    url = os.environ.get("SMART_LLM_WEB_SEARCH_REDIS_URL") or os.environ.get("REDIS_URL")
+    url = os.environ.get("SMART_LLM_WEB_SEARCH_REDIS_URL") or os.environ.get(
+        "REDIS_URL"
+    )
     if url:
         try:
             import redis.asyncio as aioredis

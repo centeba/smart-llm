@@ -38,17 +38,27 @@ class FakeProvider:
         self.seen_input = user_prompt
         # ensure_ascii=False so echoed placeholder glyphs stay literal, the way
         # a model emits them in its output (not as \uXXXX escapes).
-        text = user_prompt if isinstance(user_prompt, str) else json.dumps(user_prompt, ensure_ascii=False)
+        text = (
+            user_prompt
+            if isinstance(user_prompt, str)
+            else json.dumps(user_prompt, ensure_ascii=False)
+        )
         return {"content": text}
 
     async def stream(self, system, user_prompt):
         self.seen_system = system
         self.seen_input = user_prompt
-        text = user_prompt if isinstance(user_prompt, str) else json.dumps(user_prompt, ensure_ascii=False)
+        text = (
+            user_prompt
+            if isinstance(user_prompt, str)
+            else json.dumps(user_prompt, ensure_ascii=False)
+        )
         for ch in text:
             yield ch
 
-    async def complete_with_image(self, system, prompt, image_bytes, mime_type="image/jpeg"):
+    async def complete_with_image(
+        self, system, prompt, image_bytes, mime_type="image/jpeg"
+    ):
         self.seen_image = (system, prompt, image_bytes, mime_type)
         return [{"echo": prompt}]
 
@@ -96,7 +106,9 @@ async def test_complete_masks_egress_and_rehydrates_output():
 @pytest.mark.asyncio
 async def test_complete_multi_turn_messages_masked():
     mp, inner = _mp()
-    messages = [{"role": "user", "content": f"my card is 4111 1111 1111 1111 and ssn {SSN}"}]
+    messages = [
+        {"role": "user", "content": f"my card is 4111 1111 1111 1111 and ssn {SSN}"}
+    ]
     await mp.complete("sys", messages)
     blob = json.dumps(inner.seen_input)
     assert SSN not in blob
@@ -209,7 +221,12 @@ async def test_stream_with_tools_restores_text_and_tool_args():
 
     text_out = []
     arg_out = []
-    for ev in [e async for e in mp.stream_with_tools("sys", [{"role": "user", "content": "hi"}], [])]:
+    for ev in [
+        e
+        async for e in mp.stream_with_tools(
+            "sys", [{"role": "user", "content": "hi"}], []
+        )
+    ]:
         if ev["type"] == "text_delta":
             text_out.append(ev["delta"])
         elif ev["type"] == "tool_use_input_delta":

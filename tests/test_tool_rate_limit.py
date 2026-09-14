@@ -59,9 +59,13 @@ async def test_gate_denies_over_rate_limit():
     )
     gate = ToolPolicyGate(ctx)
 
-    d1 = await gate.evaluate(tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args())
+    d1 = await gate.evaluate(
+        tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args()
+    )
     assert d1.allowed
-    d2 = await gate.evaluate(tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args())
+    d2 = await gate.evaluate(
+        tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args()
+    )
     assert not d2.allowed
     assert d2.decision == "deny"
     assert d2.reason == "rate limit exceeded"
@@ -86,7 +90,9 @@ async def test_denied_call_does_not_consume_budget():
     )
     assert not denied.allowed  # not in allow-list
     # The allowed tool still gets its one token.
-    ok = await gate.evaluate(tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args())
+    ok = await gate.evaluate(
+        tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args()
+    )
     assert ok.allowed
 
 
@@ -102,5 +108,7 @@ async def test_limiter_failure_fails_open():
         rate_limiter=_boom,
     )
     gate = ToolPolicyGate(ctx)
-    d = await gate.evaluate(tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args())
+    d = await gate.evaluate(
+        tool_name="ReadThing", tool_cls=_ReadTool, validated_args=_Args()
+    )
     assert d.allowed  # availability: a limiter blip does not deny legitimate calls
