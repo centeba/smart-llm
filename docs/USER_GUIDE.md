@@ -121,6 +121,48 @@ flagged). See `smart_llm.mcp.client`.
 rotation and failover. The default store is in-memory; the `[db]` extra provides a
 SQLAlchemy-backed store for persistence and per-key usage accounting.
 
+## Persistence & schema (agents, skills, keys, usage/budgets)
+
+smart-llm defines its tables as **ORM models bound to a host-provided declarative
+`Base`**, not as migrations — the package is a library, so the host app owns
+schema creation. The models:
+
+- `smart_llm.db.models` — `ai_skills`, `ai_agent_configs`, `ai_agent_skill_links`,
+  `ai_agent_grants`, `ai_skill_grants`, `agent_runs`, `agent_action_audit`.
+- `smart_llm.models` — `llm_api_keys`.
+- `smart_llm.usage.make_usage_model(Base)` — the **`ai_usage_events`** ledger that
+  powers usage & budgets (usd_cost, tokens, company_id, created_at); budget
+  enforcement lives in `smart_llm.usage` (`UsageContext`, `BudgetExceededError`).
+
+Bind them to your `Base` and create the tables (needs the `[db]` extra):
+
+```python
+from sqlalchemy.orm import declarative_base
+from smart_llm.usage import make_usage_model
+# ... plus the model factories in smart_llm.db.models
+
+Base = declarative_base()
+AIUsageEvent = make_usage_model(Base)
+# register the other models against Base, then:
+Base.metadata.create_all(engine)     # or manage via your own Alembic migrations
+```
+
+There are **no Alembic migrations in this repo** — wire these models into your
+app's migration story (the cost-dashboard endpoint reads `ai_usage_events`).
+
+## Admin UIs
+
+Two optional front-ends render agents / skills / LLM keys / usage & budgets:
+
+- **Flutter** — [`../flutter_package`](../flutter_package) (`smart_llm_ui`): provide
+  an authenticated `Dio` via `smartLlmDioProvider` and use `AgentsScreen`,
+  `SkillsScreen`, `LlmKeysScreen`, `UsageScreen`.
+- **React** — [`../react-admin`](../react-admin): `npm install && npm run dev`
+  (dev-proxies `/api` to your service); build with `npm run build`.
+
+Both read the same endpoints (`/api/v1/ai-agents`, `ai-skills`,
+`ai-agents/llm-keys`, `ai-usage/cost-dashboard`).
+
 ## Development
 
 ```bash

@@ -9,6 +9,7 @@ library smart_llm_ui;
 export 'src/models/ai_agent_config.dart';
 export 'src/models/ai_skill.dart';
 export 'src/models/company_llm_api_key.dart';
+export 'src/models/cost_dashboard.dart';
 
 // Services / providers
 export 'src/services/ai_agents_service.dart';
@@ -18,6 +19,7 @@ export 'src/screens/agent_detail_screen.dart';
 export 'src/screens/agents_screen.dart';
 export 'src/screens/llm_keys_screen.dart';
 export 'src/screens/skills_screen.dart';
+export 'src/screens/usage_screen.dart';
 
 // Theming (so the host app can override palette tokens)
 export 'src/theme/smart_llm_colors.dart';

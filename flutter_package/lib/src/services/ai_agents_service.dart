@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/ai_agent_config.dart';
 import '../models/ai_skill.dart';
 import '../models/company_llm_api_key.dart';
+import '../models/cost_dashboard.dart';
 
 /// The Dio instance used by smart_llm_ui to talk to the backend.
 ///
@@ -134,5 +135,12 @@ class AIAgentsService {
 
   Future<void> deleteLLMKey(String id) async {
     await _dio.delete('$_base/ai-agents/llm-keys/$id');
+  }
+
+  // --- Usage / cost ---
+
+  Future<CostDashboard> getCostDashboard() async {
+    final response = await _dio.get('$_base/ai-usage/cost-dashboard');
+    return CostDashboard.fromJson(response.data as Map<String, dynamic>);
   }
 }

@@ -85,6 +85,17 @@ install_observability(app, service_name="my-service")  # /metrics + OTEL + Sentr
 All exporters activate only when their env is set (`OTEL_EXPORTER_OTLP_ENDPOINT`,
 `SENTRY_DSN`); everything is a no-op otherwise.
 
+## Admin UIs
+
+Two optional front-ends render the same management views — **agents, skills,
+LLM keys, and usage & budgets** — over the API (`/api/v1/ai-agents`, `ai-skills`,
+`ai-agents/llm-keys`, `ai-usage/cost-dashboard`):
+
+- [`flutter_package/`](flutter_package) — a Flutter/Dart package (`smart_llm_ui`).
+- [`react-admin/`](react-admin) — a Vite + React + TypeScript app.
+
+Each has its own README.
+
 ## Layout
 
 - `src/smart_llm/` — the package (agent, providers, tools, security, mcp,
@@ -92,6 +103,7 @@ All exporters activate only when their env is set (`OTEL_EXPORTER_OTLP_ENDPOINT`
 - `examples/` — runnable examples.
 - `docs/` — design and usage notes.
 - `tests/` — the suite (`pytest`).
+- `flutter_package/`, `react-admin/` — the admin UIs.
 
 ## License
 
