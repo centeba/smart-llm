@@ -59,12 +59,20 @@ asyncio.run(main())
 
 A runnable version is in [`../examples/agent_demo.py`](../examples/agent_demo.py).
 
-## Defining a tool
+## Defining a tool (and adding integrations)
 
 Tools are typed `ActionTool`s that declare a **risk tier** (`read`, `write`, or
 `external`). Read tools dispatch freely; write/external tools require an explicit
-policy (deny-by-default — see "Safety"). Subclass `ActionTool`, implement its
-`run_action`, and pass it to the agent's `tools=[...]`.
+policy (deny-by-default — see "Safety"). Subclass `ActionTool`, set its
+`args_model`, implement `run_action`, and register it with `register_tool(...)`.
+A complete, runnable external-API tool is in
+[`../examples/custom_tool.py`](../examples/custom_tool.py).
+
+> **Vendor integrations are intentionally not shipped.** smart-llm keeps the core
+> vendor-neutral — adapters for specific services (Stripe, Gmail, Drive, …) belong
+> in *your* codebase, added via the `ActionTool` pattern above or the MCP client
+> (below). That keeps the package free of any single backend's credentials and
+> semantics; mark such tools `risk = "external"` so the policy gate governs them.
 
 ## Safety
 
