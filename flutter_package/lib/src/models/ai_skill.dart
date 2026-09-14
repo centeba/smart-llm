@@ -1,3 +1,7 @@
+// freezed puts @JsonSerializable on the factory constructor; the generator reads
+// it there, but the analyzer only allows it on classes.
+// ignore_for_file: invalid_annotation_target
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'ai_skill.freezed.dart';

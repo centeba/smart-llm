@@ -161,7 +161,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
-              value: _provider,
+              initialValue: _provider,
               items: const [
                 DropdownMenuItem(value: 'openai', child: Text('OpenAI')),
                 DropdownMenuItem(value: 'anthropic', child: Text('Anthropic')),
@@ -184,7 +184,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
-              value: _format,
+              initialValue: _format,
               items: const [
                 DropdownMenuItem(value: 'text', child: Text('Text')),
                 DropdownMenuItem(value: 'json', child: Text('JSON')),

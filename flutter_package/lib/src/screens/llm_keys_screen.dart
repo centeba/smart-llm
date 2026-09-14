@@ -26,7 +26,7 @@ class LLMKeysScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: provider,
+                initialValue: provider,
                 items: const [
                   DropdownMenuItem(value: 'openai', child: Text('OpenAI')),
                   DropdownMenuItem(
