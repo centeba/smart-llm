@@ -28,10 +28,8 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from fastapi import FastAPI
+from fastapi import FastAPI
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +45,7 @@ def install_metrics(app: FastAPI, *, service_name: str) -> None:
     excluded from the per-route metric to avoid cardinality blow-up.
     """
     try:
-        from prometheus_fastapi_instrumentator import Instrumentator
+        from prometheus_fastapi_instrumentator import Instrumentator, metrics
     except ImportError:
         logger.info(
             "metrics_skipped: prometheus_fastapi_instrumentator not installed "
@@ -58,10 +56,22 @@ def install_metrics(app: FastAPI, *, service_name: str) -> None:
     excluded = ("/metrics", "/health", "/openapi.json", "/docs", "/redoc")
     instrumentator = Instrumentator(
         excluded_handlers=list(excluded),
+        # Keep exact codes ("503", not "5xx") so dashboards can match
+        # status=~"5.." — the grouped form never matches that regex.
+        should_group_status_codes=False,
         # service label is set per-process via the env var; the
         # instrumentator reads from prometheus_client.REGISTRY, so set
         # the label via constant_labels at registration.
     )
+    # Explicit metric set instead of the library default: the default
+    # http_request_duration_seconds has no ``status`` label, so the
+    # observability platform's error-rate panel (which filters that metric on
+    # status) would always read 0%. Drops the unlabelled
+    # http_request_duration_highr_seconds histogram.
+    instrumentator.add(metrics.requests())
+    instrumentator.add(metrics.latency(should_include_status=True))
+    instrumentator.add(metrics.request_size())
+    instrumentator.add(metrics.response_size())
     instrumentator.instrument(app)
     # Use a small custom hook so every default metric carries the
     # service name; the upstream API doesn't expose constant_labels
@@ -168,17 +178,14 @@ def install_tracing(
         )
         return
 
-    provider = TracerProvider(
-        resource=Resource.create(
-            {
-                SERVICE_NAME: service_name,
-                # semconv key; string literal avoids version-specific constants.
-                "deployment.environment": (
-                    environment or os.environ.get("ENVIRONMENT", "production")
-                ),
-            }
-        ),
-    )
+    attributes: dict[str, str] = {SERVICE_NAME: service_name}
+    env = environment or os.environ.get("ENVIRONMENT")
+    # Omit when unset rather than claiming "production": the collector's
+    # resource processor then inserts its own deployment.environment.
+    if env:
+        # semconv key; string literal avoids version-specific constants.
+        attributes["deployment.environment"] = env
+    provider = TracerProvider(resource=Resource.create(attributes))
     provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
     trace.set_tracer_provider(provider)
     FastAPIInstrumentor.instrument_app(app)
