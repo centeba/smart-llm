@@ -134,21 +134,41 @@ schema creation. The models:
   powers usage & budgets (usd_cost, tokens, company_id, created_at); budget
   enforcement lives in `smart_llm.usage` (`UsageContext`, `BudgetExceededError`).
 
-Bind them to your `Base` and create the tables (needs the `[db]` extra):
+### Batteries-included (standalone)
+
+`smart_llm.db.schema` bundles every table onto one `Base` (needs the `[db]` extra):
 
 ```python
-from sqlalchemy.orm import declarative_base
-from smart_llm.usage import make_usage_model
-# ... plus the model factories in smart_llm.db.models
+from sqlalchemy import create_engine
+from smart_llm.db.schema import create_all
 
-Base = declarative_base()
-AIUsageEvent = make_usage_model(Base)
-# register the other models against Base, then:
-Base.metadata.create_all(engine)     # or manage via your own Alembic migrations
+create_all(create_engine("postgresql+psycopg://user:pw@host/db"))
 ```
 
-There are **no Alembic migrations in this repo** — wire these models into your
-app's migration story (the cost-dashboard endpoint reads `ai_usage_events`).
+Or use the bundled **Alembic baseline** (repo-root `alembic.ini` + `alembic/`):
+
+```bash
+pip install -e ".[db]"
+DATABASE_URL="postgresql+psycopg://user:pw@host/db" alembic upgrade head
+```
+
+Either path creates `ai_usage_events` (usage/budgets), `llm_api_keys`,
+`ai_agent_configs`, `ai_skills`, the grant/link tables, `agent_runs`, and
+`agent_action_audit`. After the baseline, evolve the schema with normal
+`alembic revision --autogenerate`.
+
+### Bring-your-own Base (embedding in a host app)
+
+If your app already owns a `Base` + migrations, **don't import `schema`** — bind
+the factories to your Base and manage them with your own migrations instead:
+
+```python
+from smart_llm.db.models import make_ai_models
+from smart_llm.usage import make_usage_model
+
+ai_models = make_ai_models(host_base)      # agent/skill/grant/run/audit models
+AIUsageEvent = make_usage_model(host_base) # ai_usage_events ledger
+```
 
 ## Admin UIs
 

@@ -24,6 +24,7 @@ dependencies = [
 db = [
     "sqlalchemy[asyncio]>=2.0",
     "cryptography>=42.0.0",
+    "alembic>=1.13",
 ]
 # Observability stack (Phase 3 of the architecture assessment). Pin
 # loosely — every service that needs Prometheus/OTEL/Sentry installs
