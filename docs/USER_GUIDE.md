@@ -159,14 +159,20 @@ Anthropic agent first and an OpenRouter agent second:
 ```python
 from smart_llm import Agent, AgentManager
 
-primary = Agent(name="primary", provider_type="anthropic",
-                system_prompt="You are a concise assistant.")
-fallback = Agent(name="fallback", provider_type="openrouter",
-                 system_prompt="You are a concise assistant.")
+primary = Agent(
+    name="primary",
+    provider_type="anthropic",
+    system_prompt="You are a concise assistant.",
+)
+fallback = Agent(
+    name="fallback",
+    provider_type="openrouter",
+    system_prompt="You are a concise assistant.",
+)
 
 manager = AgentManager()
-manager.register_agent(primary)    # tried first
-manager.register_agent(fallback)   # tried only if primary fails / is circuit-open
+manager.register_agent(primary)  # tried first
+manager.register_agent(fallback)  # tried only if primary fails / is circuit-open
 
 response = await manager.analyze("Summarize agentic AI in 3 bullets.")
 ```
@@ -237,8 +243,8 @@ the factories to your Base and manage them with your own migrations instead:
 from smart_llm.db.models import make_ai_models
 from smart_llm.usage import make_usage_model
 
-ai_models = make_ai_models(host_base)      # agent/skill/grant/run/audit models
-AIUsageEvent = make_usage_model(host_base) # ai_usage_events ledger
+ai_models = make_ai_models(host_base)  # agent/skill/grant/run/audit models
+AIUsageEvent = make_usage_model(host_base)  # ai_usage_events ledger
 ```
 
 ## Admin UIs
