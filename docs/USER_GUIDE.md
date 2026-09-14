@@ -104,9 +104,31 @@ Everything activates only when its env is set:
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | export logs + traces (OTLP/HTTP) |
 | `SENTRY_DSN` | error capture |
 | `LOG_LEVEL` | verbosity: `DEBUG\|INFO\|WARNING\|ERROR\|CRITICAL` |
-| `ENVIRONMENT` | `deployment.environment` on signals |
+| `ENVIRONMENT` | `deployment.environment` on logs + traces (omitted when unset, so the collector can supply it) |
 
 Unset, the helpers no-op and you still get JSON logs on stdout.
+
+### Sending to the SentinelBuild observability platform
+
+[sentinelbuild_observability](https://github.com/centeba/sentinelbuild_observability)
+takes standard OTLP, so no extra package is needed:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+ENVIRONMENT=dev
+# production collector requires its ingest token:
+OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer%20<OTEL_INGEST_TOKEN>
+```
+
+Logs and traces arrive over OTLP. Metrics are **pulled**: add the service's
+`/metrics` to the platform's `prometheus/prometheus.yml`. The `job_name` becomes
+the `job` the Overview dashboard filters on:
+
+```yaml
+scrape_configs:
+  - job_name: my-service
+    static_configs: [{ targets: ["my-service:8000"] }]
+```
 
 ## Connecting an MCP server
 
