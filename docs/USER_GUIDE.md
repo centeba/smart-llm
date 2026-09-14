@@ -121,6 +121,55 @@ flagged). See `smart_llm.mcp.client`.
 rotation and failover. The default store is in-memory; the `[db]` extra provides a
 SQLAlchemy-backed store for persistence and per-key usage accounting.
 
+## Multi-provider failover (AgentManager)
+
+There are **two independent resilience layers**, and they compose:
+
+| Layer | Scope | Owner | Triggers |
+|---|---|---|---|
+| **Key rotation** | *within* one provider | `KeyManager` (§ Keys & rotation) | a key is rate-limited / invalid |
+| **Provider failover** | *across* providers | `AgentManager` | a whole provider errors or its circuit is open |
+
+`AgentManager` holds a pool of agents and tries them **in registration order**
+until one succeeds — so to fail from Anthropic over to OpenRouter, register an
+Anthropic agent first and an OpenRouter agent second:
+
+```python
+from smart_llm import Agent, AgentManager
+
+primary = Agent(name="primary", provider_type="anthropic",
+                system_prompt="You are a concise assistant.")
+fallback = Agent(name="fallback", provider_type="openrouter",
+                 system_prompt="You are a concise assistant.")
+
+manager = AgentManager()
+manager.register_agent(primary)    # tried first
+manager.register_agent(fallback)   # tried only if primary fails / is circuit-open
+
+response = await manager.analyze("Summarize agentic AI in 3 bullets.")
+```
+
+How a call flows through the sequence (`AgentManager.analyze` /
+`analyze_image`):
+
+1. **Circuit check first.** Each provider has a shared breaker keyed
+   `llm-<provider_type>`. If it's **open**, that agent is skipped immediately
+   (no request burned waiting for a timeout) and the manager moves to the next.
+2. **Call inside a `resilient_section`** (`failure_threshold=5`,
+   `recovery_timeout=30s`). Success returns straight away.
+3. **On failure**, the manager rotates the failed provider's keys
+   (`key_manager.rotate_on_failure(provider_type)`), records the breaker miss,
+   and falls over to the next agent in the sequence.
+4. **If every agent fails**, the last underlying error is re-raised; if every
+   agent was skipped because its circuit was open, a `RuntimeError` is raised
+   naming the open providers (wait for breaker recovery).
+
+Because breakers are **per-provider and shared**, registering several agents on
+the *same* provider only adds key/config variety — it does not add vendor
+redundancy. For true redundancy, give each fallback a **different**
+`provider_type`. (Same-provider agents are still useful for A/B configs or
+distinct system prompts — see `smart_llm/api/main.py` for a paired example.)
+
 ## Persistence & schema (agents, skills, keys, usage/budgets)
 
 smart-llm defines its tables as **ORM models bound to a host-provided declarative
