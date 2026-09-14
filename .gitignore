@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.env
+.pytest_cache/
+
+# Local Claude Code settings
+.claude/
+
+# Flutter
+flutter_package/.dart_tool/
+flutter_package/.flutter-plugins
+flutter_package/.flutter-plugins-dependencies
+flutter_package/build/
+flutter_package/pubspec.lock

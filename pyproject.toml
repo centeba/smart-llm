@@ -1,0 +1,98 @@
+[project]
+name = "smart-llm"
+version = "0.2.0"
+description = "A generic, agentic LLM interface with multi-provider support and key rotation."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "google-genai>=1.19.0",
+    "openai>=1.84.0",
+    "anthropic>=0.52.0",
+    "pydantic>=2.13.3",
+    "fastapi>=0.136.0,<0.137.0",
+    "uvicorn>=0.45.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.28.1",
+    # SQL parsing for smart_llm.sql_safety (validates/scopes db_query SQL).
+    "sqlparse>=0.5",
+]
+
+[project.optional-dependencies]
+db = [
+    "sqlalchemy[asyncio]>=2.0",
+    "cryptography>=42.0.0",
+]
+# Observability stack (Phase 3 of the architecture assessment). Pin
+# loosely — every service that needs Prometheus/OTEL/Sentry installs
+# smart-llm[observability] in its requirements so all services land
+# on the same versions and the smart_llm.observability helper can
+# import them unconditionally.
+observability = [
+    "prometheus-fastapi-instrumentator>=7.0.0",
+    "sentry-sdk[fastapi]>=2.0.0",
+    # opentelemetry-api is what smart_llm.tracing imports to emit agent-native
+    # GenAI spans; the sdk pulls it transitively but list it explicitly so the
+    # agent-tracing layer has a declared floor.
+    "opentelemetry-api>=1.27.0",
+    "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+    "opentelemetry-instrumentation-fastapi>=0.48b0",
+    "opentelemetry-instrumentation-httpx>=0.48b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.48b0",
+]
+# MCP client — adapt external Model Context Protocol tool servers into native
+# ActionTools. Optional: only services that connect to MCP servers install it.
+mcp = [
+    "mcp>=1.0",
+]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov>=6.0.0",  # the --cov-fail-under gate needs the plugin declared (SB-04)
+    "aiosqlite",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI DI markers are meant to be called in argument defaults (framework
+# contract, not the B008 mutable-default bug). B008 still catches real ones.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Security",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Form",
+    "fastapi.File",
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ['(^|/)tests/', '(^|/)alembic/', '(^|/)migrations/', '(^|/)examples/']
+
+[[tool.mypy.overrides]]
+module = [
+    "azure.*",
+    "boto3",
+    "botocore.*",
+    "google.cloud",
+    "google.cloud.*",
+    "sentinelbuild_sdk.*",
+    "integration_hub_backend.*",
+    "pypdf",
+    "docx",
+    "pytesseract",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+# Coverage gate (SB-04) — conservative floor; ratchet from the first green CI run.
+addopts = "--cov=smart_llm --cov-report=term-missing --cov-fail-under=50"
