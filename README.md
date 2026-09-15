@@ -105,6 +105,13 @@ Each has its own README.
 - `tests/` — the suite (`pytest`).
 - `flutter_package/`, `react-admin/` — the admin UIs.
 
+## Used by
+
+- [**notification-hub**](https://github.com/centeba/notification-hub) — a
+  multi-channel notification service (email / SMS / webhook) that builds its
+  agentic AI layer, key store, usage/budgets, and observability rails on
+  smart-llm.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
