@@ -111,14 +111,14 @@ Each has its own README.
   multi-channel notification service (email / SMS / webhook) that builds its
   agentic AI layer, key store, usage/budgets, and observability rails on
   smart-llm. Its
-  [integration connectors](https://github.com/centeba/notification-hub/blob/main/src/integration_hub_backend/api/api/routes/integrations_catalog.py)
+  [integration connectors](https://github.com/centeba/notification-hub/blob/77dde1be6564cf9f58e829159e41f3b88d8beb51/src/integration_hub_backend/api/api/routes/integrations_catalog.py)
   (Gmail, Outlook, Stripe, S3, Datadog, Claude, and more, managed from the
   admin UIs' Integrations page) include a Claude connector that runs on
   smart-llm.
 - [**sentinelbuild-workflow-engine**](https://github.com/centeba/sentinelbuild_workflow_engine)
   — an n8n-equivalent durable workflow automation platform whose agent nodes,
   key store, and observability rails run on smart-llm. Its
-  [connector integrations](https://github.com/centeba/sentinelbuild_workflow_engine/blob/main/backend/api/connectors.json)
+  [connector integrations](https://github.com/centeba/sentinelbuild_workflow_engine/blob/cf8c1c49d76db1d18b34040a3e77461ce29791c8/backend/api/connectors.json)
   (Claude, OpenAI, and 20+ others, managed from the admin UIs' Integrations
   page) route their LLM calls through smart-llm.
 
