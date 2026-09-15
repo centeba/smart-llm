@@ -111,6 +111,9 @@ Each has its own README.
   multi-channel notification service (email / SMS / webhook) that builds its
   agentic AI layer, key store, usage/budgets, and observability rails on
   smart-llm.
+- [**sentinelbuild-workflow-engine**](https://github.com/centeba/sentinelbuild_workflow_engine)
+  — an n8n-equivalent durable workflow automation platform whose agent nodes,
+  key store, and observability rails run on smart-llm.
 
 ## License
 
