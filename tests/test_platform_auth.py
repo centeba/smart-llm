@@ -40,7 +40,8 @@ def keys() -> tuple[str, str]:
 
 
 def _claims(**extra) -> dict:
-    return {"sub": "u1", "exp": int(time.time()) + 3600, **extra}
+    # Every real platform token carries a scope; ``full`` is the bearer scope.
+    return {"sub": "u1", "exp": int(time.time()) + 3600, "scope": "full", **extra}
 
 
 def _forge_hs256_with(secret: str, claims: dict) -> str:
@@ -127,6 +128,47 @@ def test_require_claims_enforced(monkeypatch):
     tok = (seg + b"." + sig).decode()
     with pytest.raises(jwt.MissingRequiredClaimError):
         decode_platform_token(tok, HS, require=["sub", "exp"])
+
+
+# ── scope allowlist ───────────────────────────────────────────────────────────
+# user-master signs ``refresh`` (30 d) and ``pre_2fa`` tokens with the same key
+# as ``full`` access tokens. They must never be accepted as a bearer credential.
+
+
+@pytest.mark.parametrize("scope", ["refresh", "pre_2fa", "anything-else"])
+def test_non_bearer_scope_rejected_by_default(scope):
+    tok = jwt.encode(_claims(scope=scope), HS, algorithm="HS256")
+    with pytest.raises(jwt.InvalidTokenError, match="scope"):
+        decode_platform_token(tok, HS)
+
+
+def test_missing_scope_rejected_by_default():
+    claims = _claims()
+    del claims["scope"]
+    tok = jwt.encode(claims, HS, algorithm="HS256")
+    with pytest.raises(jwt.InvalidTokenError, match="scope"):
+        decode_platform_token(tok, HS)
+
+
+def test_full_scope_accepted_by_default():
+    tok = jwt.encode(_claims(), HS, algorithm="HS256")
+    assert decode_platform_token(tok, HS)["scope"] == "full"
+
+
+def test_flow_can_opt_into_a_specific_scope():
+    tok = jwt.encode(_claims(scope="pre_2fa"), HS, algorithm="HS256")
+    assert (
+        decode_platform_token(tok, HS, allowed_scopes=("pre_2fa",))["scope"]
+        == "pre_2fa"
+    )
+    # ...but opting into one scope still rejects the others.
+    with pytest.raises(jwt.InvalidTokenError):
+        decode_platform_token(tok, HS, allowed_scopes=("full",))
+
+
+def test_allowed_scopes_none_skips_the_check():
+    tok = jwt.encode(_claims(scope="refresh"), HS, algorithm="HS256")
+    assert decode_platform_token(tok, HS, allowed_scopes=None)["scope"] == "refresh"
 
 
 def test_rs256_without_public_key_rejected(keys):

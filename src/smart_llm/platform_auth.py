@@ -51,17 +51,32 @@ def _jwks_signing_key(token: str, jwks_url: str) -> Any:
         raise jwt.InvalidTokenError(f"JWKS key resolution failed: {exc}") from exc
 
 
+#: Scopes a verified token may carry by default. user-master mints ``full``
+#: access tokens, short-lived ``pre_2fa`` tokens (only valid for completing
+#: 2FA) and long-lived ``refresh`` tokens — the latter two must never be
+#: accepted as a bearer credential by any service.
+DEFAULT_ALLOWED_SCOPES: tuple[str, ...] = ("full",)
+
+
 def decode_platform_token(
     token: str,
     hs_secret: str,
     *,
     require: list[str] | None = None,
+    allowed_scopes: tuple[str, ...] | None = DEFAULT_ALLOWED_SCOPES,
 ) -> dict[str, Any]:
     """Verify a SentinelBuild platform JWT in HS256/RS256 dual mode.
 
     ``hs_secret`` is the caller's existing HS256 shared secret. ``require`` is an
     optional list of claims that must be present (e.g. ``["sub", "exp"]``).
-    Raises ``jwt.InvalidTokenError`` (or a subclass) on any failure.
+
+    ``allowed_scopes`` is the set of ``scope`` claims accepted; it defaults to
+    ``("full",)`` so a ``refresh`` or ``pre_2fa`` token (same signing key, but
+    not a bearer credential) is rejected everywhere by default. A token with
+    no ``scope`` claim is rejected too. Pass the specific scope a flow needs
+    (e.g. ``("pre_2fa",)`` for the 2FA-completion endpoint) or ``None`` to
+    skip the check. Raises ``jwt.InvalidTokenError`` (or a subclass) on any
+    failure.
     """
     public_key = os.environ.get("JWT_PUBLIC_KEY", "")
     jwks_url = os.environ.get("JWT_JWKS_URL", "")
@@ -97,9 +112,14 @@ def decode_platform_token(
         options["verify_aud"] = False
     if issuer:
         kwargs["issuer"] = issuer
-    return jwt.decode(
+    payload: dict[str, Any] = jwt.decode(
         token, key, algorithms=algorithms, options=cast(Any, options), **kwargs
     )
+    if allowed_scopes is not None and payload.get("scope") not in allowed_scopes:
+        raise jwt.InvalidTokenError(
+            f"Token scope {payload.get('scope')!r} is not accepted here"
+        )
+    return payload
 
 
 def platform_auth_configured() -> bool:
