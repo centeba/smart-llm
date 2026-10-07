@@ -57,7 +57,7 @@ class _FakeJWKClient:
 
 def _tok(priv: str, kid: str) -> str:
     return jwt.encode(
-        {"sub": "u1", "exp": int(time.time()) + 3600},
+        {"sub": "u1", "exp": int(time.time()) + 3600, "scope": "full"},
         priv,
         algorithm="RS256",
         headers={"kid": kid},
