@@ -82,8 +82,8 @@ def test_jwks_kid_selection_and_rotation(monkeypatch):
     )
     monkeypatch.setenv("JWT_JWKS_URL", url)
     # During rotation both keys are published → tokens under either kid verify.
-    assert pa.decode_platform_token(_tok(privA, "kA"), "")["sub"] == "u1"
-    assert pa.decode_platform_token(_tok(privB, "kB"), "")["sub"] == "u1"
+    assert pa.decode_platform_token(_tok(privA, "kA"))["sub"] == "u1"
+    assert pa.decode_platform_token(_tok(privB, "kB"))["sub"] == "u1"
     assert pa.platform_auth_configured() is True
 
 
@@ -93,7 +93,7 @@ def test_unknown_kid_rejected(monkeypatch):
     pa._jwks_clients[url] = _FakeJWKClient({"keys": [_jwk(pubA, "kA")]})
     monkeypatch.setenv("JWT_JWKS_URL", url)
     with pytest.raises(jwt.InvalidTokenError):
-        pa.decode_platform_token(_tok(privA, "kZ"), "")  # kid not in the set
+        pa.decode_platform_token(_tok(privA, "kZ"))  # kid not in the set
 
 
 def test_forged_key_for_known_kid_rejected(monkeypatch):
@@ -105,11 +105,11 @@ def test_forged_key_for_known_kid_rejected(monkeypatch):
     pa._jwks_clients[url] = _FakeJWKClient({"keys": [_jwk(pubA, "kA")]})
     monkeypatch.setenv("JWT_JWKS_URL", url)
     with pytest.raises(jwt.InvalidTokenError):
-        pa.decode_platform_token(_tok(privEvil, "kA"), "")
+        pa.decode_platform_token(_tok(privEvil, "kA"))
 
 
 def test_static_public_key_still_works_without_jwks(monkeypatch):
     # No JWT_JWKS_URL → falls back to the static public key path.
     priv, pub = _keypair()
     monkeypatch.setenv("JWT_PUBLIC_KEY", pub)
-    assert pa.decode_platform_token(_tok(priv, "kA"), "")["sub"] == "u1"
+    assert pa.decode_platform_token(_tok(priv, "kA"))["sub"] == "u1"

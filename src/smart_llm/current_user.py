@@ -10,16 +10,16 @@ The contract:
   scope, no ``exp``, bad claims — is **401** with ``WWW-Authenticate: Bearer``;
   an expired token also carries ``X-Auth-Error: token_expired`` (what the chassis
   session-expiry handler keys on). 403 is left for permission checks.
-* No usable key at all (no HS secret and no RS256 public key / JWKS URL) is a
-  500: fail closed rather than accept.
+* No verification key at all (no JWKS URL or public key) is a 500: fail closed
+  rather than accept.
 * The company is read from ``company_id``, then ``org``, then ``cid``.
 * Platform admin: ``system_admin`` or ``platform_admin``. Company admin:
   ``company_admin`` or ``system_admin`` — ``platform_admin`` is a builder role,
   not a company admin.
 
-Each service passes its own HS secret source and its own RLS ``stamp`` (its
-``set_current_org`` / ``set_bypass_rls`` policy), so neither the env-var name
-nor who bypasses RLS moves into this library.
+Tokens are RS256, verified with user-master's public key (roadmap 2.3). Each
+service passes its own RLS ``stamp`` (its ``set_current_org`` /
+``set_bypass_rls`` policy), so who bypasses RLS stays out of this library.
 """
 
 import uuid
@@ -66,7 +66,6 @@ class CurrentUser:
         return self.role in COMPANY_ADMIN_ROLES
 
 
-SecretSource = Callable[[], str]
 Stamp = Callable[[CurrentUser], None]
 
 
@@ -96,7 +95,7 @@ def _unauthorized(detail: str, *, expired: bool = False) -> HTTPException:
     return HTTPException(status.HTTP_401_UNAUTHORIZED, detail, headers=headers)
 
 
-async def authenticate(token: str | None, secret: SecretSource) -> CurrentUser:
+async def authenticate(token: str | None) -> CurrentUser:
     """Verify ``token`` and return its user; raise 401 (or 500 if misconfigured).
 
     For callers that hold a raw token rather than a request — WebSocket and
@@ -104,13 +103,12 @@ async def authenticate(token: str | None, secret: SecretSource) -> CurrentUser:
     """
     if not token:
         raise _unauthorized("Not authenticated")
-    hs_secret = secret()
-    if not hs_secret and not platform_auth_configured():
+    if not platform_auth_configured():
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, "Server misconfigured: no JWT key"
         )
     try:
-        payload = decode_platform_token(token, hs_secret, require=["sub", "exp"])
+        payload = decode_platform_token(token, require=["sub", "exp"])
     except jwt.ExpiredSignatureError:
         raise _unauthorized("Token expired", expired=True) from None
     except jwt.InvalidTokenError:
@@ -128,17 +126,13 @@ async def authenticate(token: str | None, secret: SecretSource) -> CurrentUser:
 _bearer = HTTPBearer(auto_error=False)
 
 
-def current_user_dependency(
-    secret: SecretSource, stamp: Stamp
-) -> Callable[..., Awaitable[CurrentUser]]:
+def current_user_dependency(stamp: Stamp) -> Callable[..., Awaitable[CurrentUser]]:
     """A FastAPI dependency: the authenticated user (401 otherwise), RLS stamped."""
 
     async def dependency(
         credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     ) -> CurrentUser:
-        user = await authenticate(
-            credentials.credentials if credentials else None, secret
-        )
+        user = await authenticate(credentials.credentials if credentials else None)
         stamp(user)
         return user
 
@@ -146,7 +140,7 @@ def current_user_dependency(
 
 
 def optional_current_user_dependency(
-    secret: SecretSource, stamp: Stamp
+    stamp: Stamp,
 ) -> Callable[..., Awaitable[CurrentUser | None]]:
     """Like ``current_user_dependency`` for routes that also serve anonymous
     callers: ``None`` when there is no usable token. A misconfigured server
@@ -158,7 +152,7 @@ def optional_current_user_dependency(
         if credentials is None:
             return None
         try:
-            user = await authenticate(credentials.credentials, secret)
+            user = await authenticate(credentials.credentials)
         except HTTPException as exc:
             if exc.status_code == status.HTTP_401_UNAUTHORIZED:
                 return None
@@ -174,7 +168,6 @@ __all__ = [
     "DEFAULT_ROLE",
     "PLATFORM_ADMIN_ROLES",
     "CurrentUser",
-    "SecretSource",
     "Stamp",
     "authenticate",
     "current_user_dependency",
