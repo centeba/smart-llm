@@ -2,7 +2,8 @@
 
 Pins the platform-wide contract every service swaps to: 401 (+ WWW-Authenticate)
 for every token failure, X-Auth-Error on expiry, company_id -> org -> cid, the
-admin rules, revocation, and that the service's RLS stamp sees the user.
+admin rules, revocation, and that the service's RLS stamp sees the user. Tokens
+are RS256; HS256 is rejected.
 """
 
 import time
@@ -11,6 +12,8 @@ from collections.abc import Iterator
 
 import jwt
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
@@ -23,6 +26,14 @@ from smart_llm.current_user import (
 )
 
 SECRET = "a-real-32byte-plus-shared-secret-value!!"
+_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+PUBLIC_PEM = (
+    _KEY.public_key()
+    .public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    .decode()
+)
 USER = uuid.uuid4()
 COMPANY = uuid.uuid4()
 
@@ -37,13 +48,21 @@ def _token(**claims: object) -> str:
     }
     payload.update(claims)
     return jwt.encode(
-        {k: v for k, v in payload.items() if v is not None}, SECRET, algorithm="HS256"
+        {k: v for k, v in payload.items() if v is not None}, _KEY, algorithm="RS256"
+    )
+
+
+def _hs256_token() -> str:
+    return jwt.encode(
+        {"sub": str(USER), "scope": "full", "exp": int(time.time()) + 300},
+        SECRET,
+        algorithm="HS256",
     )
 
 
 @pytest.fixture(autouse=True)
-def _no_rs256(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("JWT_PUBLIC_KEY", raising=False)
+def _rs256_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("JWT_PUBLIC_KEY", PUBLIC_PEM)
     monkeypatch.delenv("JWT_JWKS_URL", raising=False)
     monkeypatch.delenv("JWT_AUDIENCE", raising=False)
     monkeypatch.delenv("JWT_ISSUER", raising=False)
@@ -69,8 +88,8 @@ def stamped() -> list[CurrentUser]:
 @pytest.fixture
 def client(revoked: set[str], stamped: list[CurrentUser]) -> Iterator[TestClient]:
     app = FastAPI()
-    required = current_user_dependency(lambda: SECRET, stamped.append)
-    optional = optional_current_user_dependency(lambda: SECRET, stamped.append)
+    required = current_user_dependency(stamped.append)
+    optional = optional_current_user_dependency(stamped.append)
 
     @app.get("/me")
     async def me(user: CurrentUser = Depends(required)) -> dict[str, object]:
@@ -109,14 +128,8 @@ def test_valid_token_returns_user_and_stamps_rls(
     [
         (None, "Not authenticated"),
         ("not-a-jwt", "Invalid token"),
-        (
-            jwt.encode(
-                {"sub": str(USER), "scope": "full", "exp": int(time.time()) + 60},
-                "wrong-secret-value-long-enough!!!!",
-                algorithm="HS256",
-            ),
-            "Invalid token",
-        ),
+        ("wrong_key", "Invalid token"),
+        ("hs256", "Invalid token"),
         ("refresh", "Invalid token"),
         ("pre_2fa", "Invalid token"),
         ("no_exp", "Invalid token"),
@@ -128,6 +141,7 @@ def test_valid_token_returns_user_and_stamps_rls(
         "missing",
         "garbage",
         "wrong-key",
+        "hs256",
         "refresh-scope",
         "pre2fa-scope",
         "no-exp",
@@ -140,6 +154,12 @@ def test_token_failures_are_401(
     client: TestClient, stamped: list[CurrentUser], token: str | None, detail: str
 ) -> None:
     variants = {
+        "wrong_key": jwt.encode(
+            {"sub": str(USER), "scope": "full", "exp": int(time.time()) + 60},
+            rsa.generate_private_key(public_exponent=65537, key_size=2048),
+            algorithm="RS256",
+        ),
+        "hs256": _hs256_token(),
         "refresh": _token(scope="refresh"),
         "pre_2fa": _token(scope="pre_2fa"),
         "no_exp": _token(exp=None),
@@ -171,9 +191,12 @@ def test_revoked_token_is_401(client: TestClient, revoked: set[str]) -> None:
     assert resp.headers["WWW-Authenticate"] == "Bearer"
 
 
-def test_no_key_configured_fails_closed(revoked: set[str]) -> None:
+def test_no_key_configured_fails_closed(
+    revoked: set[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("JWT_PUBLIC_KEY")
     app = FastAPI()
-    dep = current_user_dependency(lambda: "", lambda _u: None)
+    dep = current_user_dependency(lambda _u: None)
 
     @app.get("/me")
     async def me(user: CurrentUser = Depends(dep)) -> dict[str, str]:

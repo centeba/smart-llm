@@ -1,21 +1,16 @@
 """Shared platform JWT verification for SentinelBuild services.
 
-Single source for the HS256->RS256 migration. A service calls
-``decode_platform_token`` with the HS256 shared secret it already holds; the
-RS256 public key and the expected ``aud``/``iss`` are read from the environment
-(``JWT_PUBLIC_KEY`` / ``JWT_AUDIENCE`` / ``JWT_ISSUER``) so no per-service
-config schema changes are needed — the same three variables are set uniformly
-across every deployment (see docs/deploy-to-railway.md, Phase 7).
+user-master is the only signer and every token is RS256 (roadmap 2.3). The
+public key (``JWT_JWKS_URL``, or a static ``JWT_PUBLIC_KEY``) and the expected
+``aud``/``iss`` (``JWT_AUDIENCE`` / ``JWT_ISSUER``) are read from the
+environment, so no per-service config schema changes are needed — the same
+variables are set uniformly across every deployment (see
+docs/deploy-to-railway.md, Phase 7).
 
-The token's own header ``alg`` selects the key: RS256 verifies against the
-public key (asymmetric), HS256 against the shared secret (symmetric). The public
-key is **never** used as an HMAC secret and ``alg=none`` is rejected, so there
-is no algorithm-confusion downgrade. ``aud``/``iss`` are enforced only when
-configured, so pre-migration HS256 tokens (which carry neither) keep validating.
-Once every issuer emits RS256, unset the shared secret to disable HS256.
+Only RS256 is accepted: there is no shared HMAC secret to forge with, and
+``alg=none`` / HS256 are rejected, so there is no algorithm-confusion
+downgrade. ``aud``/``iss`` are enforced when configured.
 """
-
-from __future__ import annotations
 
 import os
 from typing import Any, cast
@@ -60,15 +55,14 @@ DEFAULT_ALLOWED_SCOPES: tuple[str, ...] = ("full",)
 
 def decode_platform_token(
     token: str,
-    hs_secret: str,
     *,
     require: list[str] | None = None,
     allowed_scopes: tuple[str, ...] | None = DEFAULT_ALLOWED_SCOPES,
 ) -> dict[str, Any]:
-    """Verify a SentinelBuild platform JWT in HS256/RS256 dual mode.
+    """Verify a SentinelBuild platform JWT: RS256, user-master's public key.
 
-    ``hs_secret`` is the caller's existing HS256 shared secret. ``require`` is an
-    optional list of claims that must be present (e.g. ``["sub", "exp"]``).
+    ``require`` is an optional list of claims that must be present (e.g.
+    ``["sub", "exp"]``).
 
     ``allowed_scopes`` is the set of ``scope`` claims accepted; it defaults to
     ``("full",)`` so a ``refresh`` or ``pre_2fa`` token (same signing key, but
@@ -84,23 +78,16 @@ def decode_platform_token(
     issuer = os.environ.get("JWT_ISSUER", "")
 
     alg = jwt.get_unverified_header(token).get("alg")  # parses header, no verify
-    if alg == "RS256":
-        # Prefer JWKS (kid-selected, supports rotation); fall back to a static
-        # public key. The public key is never used as an HMAC secret.
-        if jwks_url:
-            key, algorithms = _jwks_signing_key(token, jwks_url), ["RS256"]
-        elif public_key:
-            key, algorithms = _normalize_pem(public_key), ["RS256"]
-        else:
-            raise jwt.InvalidTokenError(
-                "RS256 token but neither JWT_JWKS_URL nor JWT_PUBLIC_KEY is set"
-            )
-    elif alg == "HS256":
-        if not hs_secret:
-            raise jwt.InvalidTokenError("HS256 token but shared secret not set")
-        key, algorithms = hs_secret, ["HS256"]
-    else:
+    if alg != "RS256":
         raise jwt.InvalidAlgorithmError(f"Unsupported JWT alg: {alg!r}")
+    # Prefer JWKS (kid-selected, supports rotation); fall back to a static key.
+    if jwks_url:
+        key = _jwks_signing_key(token, jwks_url)
+    elif public_key:
+        key = _normalize_pem(public_key)
+    else:
+        raise jwt.InvalidTokenError("neither JWT_JWKS_URL nor JWT_PUBLIC_KEY is set")
+    algorithms = ["RS256"]
 
     options: dict[str, Any] = {}
     kwargs: dict[str, Any] = {}
@@ -123,7 +110,7 @@ def decode_platform_token(
 
 
 def platform_auth_configured() -> bool:
-    """True if an RS256 verification path is available (a static public key or a
-    JWKS URL). Used by services' fail-closed guards: reject requests when
-    neither that nor an HS secret is set rather than silently accepting."""
+    """True if an RS256 verification key is available (a JWKS URL or a static
+    public key). Used by fail-closed guards: refuse rather than accept when
+    there is nothing to verify with."""
     return bool(os.environ.get("JWT_PUBLIC_KEY") or os.environ.get("JWT_JWKS_URL"))
