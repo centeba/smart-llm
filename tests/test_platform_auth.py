@@ -92,7 +92,9 @@ def test_rs256_signed_with_another_key_rejected():
 
 
 def test_hs256_rejected():
-    tok = jwt.encode(_claims(), "a-real-32byte-plus-shared-secret-value!!", algorithm="HS256")
+    tok = jwt.encode(
+        _claims(), "a-real-32byte-plus-shared-secret-value!!", algorithm="HS256"
+    )
     with pytest.raises(jwt.InvalidTokenError):
         decode_platform_token(tok)
 

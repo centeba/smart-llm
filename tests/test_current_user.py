@@ -29,7 +29,9 @@ SECRET = "a-real-32byte-plus-shared-secret-value!!"
 _KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 PUBLIC_PEM = (
     _KEY.public_key()
-    .public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    .public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
     .decode()
 )
 USER = uuid.uuid4()
@@ -52,7 +54,9 @@ def _token(**claims: object) -> str:
 
 def _hs256_token() -> str:
     return jwt.encode(
-        {"sub": str(USER), "scope": "full", "exp": int(time.time()) + 300}, SECRET, algorithm="HS256"
+        {"sub": str(USER), "scope": "full", "exp": int(time.time()) + 300},
+        SECRET,
+        algorithm="HS256",
     )
 
 
