@@ -182,7 +182,7 @@ def create_agents_router(
                  and re-run; idempotent).
             5. Replace ``ai_agent_skill_links`` to match the resolved set.
 
-            Auth: ``Authorization: Bearer <INTERNAL_SERVICE_SECRET>``.
+            Auth: ``X-Internal-Key`` (``INTERNAL_API_KEY``).
             """
             if not data.source_app:
                 raise HTTPException(status_code=400, detail="source_app is required")

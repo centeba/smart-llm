@@ -396,7 +396,7 @@ def create_usage_router(
         async def assert_allowed(
             body: _AssertBody,
             session: SessionDep,
-            _: internal_gate_dep,  # auth: INTERNAL_SERVICE_SECRET bearer
+            _: internal_gate_dep,  # auth: X-Internal-Key
         ) -> None:
             cap = await company_settings_loader(session, str(body.company_id))
             redis = redis_factory() if redis_factory is not None else None

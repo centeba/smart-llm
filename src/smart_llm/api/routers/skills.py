@@ -362,7 +362,7 @@ def create_skills_router(
         ) -> Any:
             """Batch upsert skills owned by a vertical app.
 
-            Auth: ``Authorization: Bearer <INTERNAL_SERVICE_SECRET>``. Never
+            Auth: ``X-Internal-Key`` (``INTERNAL_API_KEY``). Never
             exposed through the external nginx ingress.
             """
             if not data.source_app:
