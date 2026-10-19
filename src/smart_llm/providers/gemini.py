@@ -144,11 +144,18 @@ class GeminiProvider:
                 system_instruction=system_prompt,
                 response_mime_type="application/json",
             )
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=cast(Any, contents),
-                config=config,
-            )
+
+            # The google-genai client is blocking; run it off the event loop like
+            # the other methods here do.
+            def _sync_call() -> types.GenerateContentResponse:
+                return self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=cast(Any, contents),
+                    config=config,
+                )
+
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(None, _sync_call)
             text = response.text
             meta = getattr(response, "usage_metadata", None)
             self.last_usage = {

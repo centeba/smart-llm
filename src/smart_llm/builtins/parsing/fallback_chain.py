@@ -377,7 +377,10 @@ async def video_vision_strategy(path: str, cfg: dict[str, Any]) -> str | None:
     interval = int(cfg.get("video_frame_interval_seconds", 30))
     with tempfile.TemporaryDirectory() as tmp:
         pattern = str(Path(tmp) / "frame-%04d.jpg")
-        proc = subprocess.run(
+        # Blocking for up to 10 minutes: run it in a worker thread so the event
+        # loop keeps serving other requests meanwhile.
+        proc = await asyncio.to_thread(
+            subprocess.run,
             [
                 "ffmpeg",
                 "-loglevel",
