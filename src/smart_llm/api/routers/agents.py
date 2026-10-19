@@ -16,7 +16,7 @@ contains the business logic.
 import uuid
 from typing import Any, cast
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -427,8 +427,8 @@ def create_agents_router(
     async def list_agent_configs(
         session: SessionDep,
         current_user: CompanyAdminDep,
-        skip: int = 0,
-        limit: int = 100,
+        skip: int = Query(0, ge=0),
+        limit: int = Query(100, ge=1, le=200),
         search: str | None = None,
         company_id: uuid.UUID | None = None,
         all_companies: bool = False,

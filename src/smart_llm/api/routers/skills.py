@@ -11,7 +11,7 @@ to get a fully-wired FastAPI APIRouter.
 import uuid
 from typing import Any, cast
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, or_, select
 
 # Phase M — index-on-write hook for AI Admin search.
@@ -113,8 +113,8 @@ def create_skills_router(
     async def list_skills(
         session: SessionDep,
         current_user: CompanyAdminDep,
-        skip: int = 0,
-        limit: int = 100,
+        skip: int = Query(0, ge=0),
+        limit: int = Query(100, ge=1, le=200),
         search: str | None = None,
         active: bool | None = None,
         company_id: uuid.UUID | None = None,
